@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun create:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run:*)",
+      "Bash(bun add:*)",
+      "Bash(timeout:*)",
+      "Bash(node:*)",
+      "Bash(bun remove:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
