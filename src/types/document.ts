@@ -26,5 +26,8 @@ export interface QueryResponse {
     pageNbr: number
     content: string
     relevance: number
+    summary: string
+    tags: string[]
+    references: string[]
   }[]
 }

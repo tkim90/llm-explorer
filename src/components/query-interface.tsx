@@ -10,6 +10,9 @@ interface QueryResult {
     pageNbr: number
     content: string
     relevance: number
+    summary: string
+    tags: string[]
+    references: string[]
   }>
 }
 
@@ -22,6 +25,8 @@ export function QueryInterface() {
   
   const queryMutation = trpc.queryDocument.useMutation({
     onSuccess: (data) => {
+      console.log('Query response:', data)
+      console.log('Sources structure:', data.sources)
       setResult(data)
     },
     onError: (error) => {
@@ -143,9 +148,44 @@ export function QueryInterface() {
                       Relevance: {(source.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {source.content}
-                  </p>
+                  
+                  <div className="mb-3">
+                    <strong className="text-sm text-gray-900">Summary:</strong>
+                    <p className="text-sm text-gray-700 mt-1">{source.summary}</p>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <strong className="text-sm text-gray-900">Tags:</strong>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {source.tags.map((tag, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {source.references.length > 0 && (
+                    <div className="mb-3">
+                      <strong className="text-sm text-gray-900">References:</strong>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {source.references.map((ref, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                            {ref}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 font-medium">
+                      Show source content
+                    </summary>
+                    <div className="mt-2 p-3 bg-white border border-gray-200 rounded text-sm text-gray-700 max-h-40 overflow-y-auto">
+                      {source.content}
+                    </div>
+                  </details>
                 </div>
               ))}
             </div>

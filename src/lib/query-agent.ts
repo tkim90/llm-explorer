@@ -15,6 +15,9 @@ export interface QueryAgentResult {
     pageNbr: number
     content: string
     relevance: number
+    summary: string
+    tags: string[]
+    references: string[]
   }>
   steps: number
 }
@@ -121,7 +124,7 @@ export class ForagerQueryAgent {
 
   async processQuery(query: string): Promise<QueryAgentResult> {
     let step = 0
-    const sources: Array<{ pageNbr: number, content: string, relevance: number }> = []
+    const sources: Array<{ pageNbr: number, content: string, relevance: number, summary: string, tags: string[], references: string[] }> = []
 
     // First, identify potentially relevant pages using AI
     const relevantPageNumbers = await identifyRelevantPages(
@@ -141,8 +144,12 @@ export class ForagerQueryAgent {
         sources.push({
           pageNbr,
           content: page.content.substring(0, 1000),
-          relevance: 1.0
+          relevance: 1.0,
+          summary: page.summary,
+          tags: page.tags,
+          references: page.references
         })
+        console.log(`Added source for page ${pageNbr} with summary: ${page.summary}`)
       }
     }
 
@@ -165,7 +172,10 @@ export class ForagerQueryAgent {
         sources.push({
           pageNbr: page.pageNbr,
           content: page.content.substring(0, 800),
-          relevance: relevanceScore / keywords.length
+          relevance: relevanceScore / keywords.length,
+          summary: page.summary,
+          tags: page.tags,
+          references: page.references
         })
       }
     }

@@ -29,6 +29,7 @@ export const appRouter = router({
     .output(z.object({
       documentId: z.string(),
       message: z.string(),
+      document: uploadedDocumentSchema,
     }))
     .mutation(async ({ input }) => {
       const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
@@ -80,6 +81,7 @@ export const appRouter = router({
         return {
           documentId: document.id,
           message: `Document uploaded successfully. Processed ${document.pages.length} pages in ${duration}ms.`,
+          document,
         }
       } catch (error) {
         const endTime = Date.now()
@@ -114,6 +116,9 @@ export const appRouter = router({
         pageNbr: z.number(),
         content: z.string(),
         relevance: z.number(),
+        summary: z.string(),
+        tags: z.array(z.string()),
+        references: z.array(z.string()),
       })),
     }))
     .mutation(async ({ input }) => {
