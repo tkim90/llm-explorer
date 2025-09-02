@@ -2,6 +2,7 @@
 
 import { trpc } from '@/lib/trpc-provider'
 import { useState } from 'react'
+import { UploadedDocument } from '@/types/document'
 
 // Upload icon component
 const UploadIcon = () => (
@@ -57,13 +58,82 @@ const StatusMessage = ({ type, message }: { type: 'success' | 'error', message: 
   )
 }
 
+// Document metadata display component
+const DocumentMetadata = ({ document }: { document: UploadedDocument }) => (
+  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+    <h3 className="text-lg font-medium text-gray-900 mb-4">Document Metadata</h3>
+    <div className="mb-4">
+      <p><strong>Filename:</strong> {document.filename}</p>
+      <p><strong>Pages:</strong> {document.pages.length}</p>
+      <p><strong>Document ID:</strong> {document.id}</p>
+    </div>
+    
+    <div className="space-y-4 max-h-96 overflow-y-auto">
+      {document.pages.map((page) => (
+        <div key={page.pageNbr} className="border border-gray-200 rounded p-3 bg-white">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium text-gray-900">Page {page.pageNbr}</h4>
+            {page.pageContentNbr && (
+              <span className="text-sm text-gray-500">Content Page {page.pageContentNbr}</span>
+            )}
+          </div>
+          
+          <div className="space-y-2 text-sm">
+            <div>
+              <strong>Summary:</strong>
+              <p className="text-gray-700 mt-1">{page.summary}</p>
+            </div>
+            
+            <div>
+              <strong>Tags:</strong>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {page.tags.map((tag, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            {page.references.length > 0 && (
+              <div>
+                <strong>References:</strong>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {page.references.map((ref, idx) => (
+                    <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                      {ref}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <details className="mt-2">
+              <summary className="cursor-pointer text-gray-600 hover:text-gray-800">
+                Show page content
+              </summary>
+              <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600 max-h-32 overflow-y-auto">
+                {page.content}
+              </div>
+            </details>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)
+
 // Main upload component
 export function PDFUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [processedDocument, setProcessedDocument] = useState<UploadedDocument | null>(null)
 
   const uploadMutation = trpc.uploadDocument.useMutation({
-    onSuccess: () => setSelectedFile(null),
+    onSuccess: (data) => {
+      setSelectedFile(null)
+      setProcessedDocument(data.document)
+    },
     onError: (error) => console.error('Upload failed:', error),
   })
 
@@ -156,6 +226,10 @@ export function PDFUpload() {
 
       {uploadMutation.isError && (
         <StatusMessage type="error" message={uploadMutation.error?.message || 'Upload failed'} />
+      )}
+
+      {processedDocument && (
+        <DocumentMetadata document={processedDocument} />
       )}
     </div>
   )

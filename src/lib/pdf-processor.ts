@@ -11,7 +11,7 @@ export async function processPDFBuffer(
     // Use pdf2json for better Next.js compatibility
     const PDFParser = (await import('pdf2json')).default
     
-    const pdfParser = new PDFParser(null, 1)
+    const pdfParser = new PDFParser(null, true)
     
     const parsePromise = new Promise<any>((resolve, reject) => {
       pdfParser.on('pdfParser_dataError', reject)

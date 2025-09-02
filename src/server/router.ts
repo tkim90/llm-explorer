@@ -28,6 +28,7 @@ export const appRouter = router({
     .output(z.object({
       documentId: z.string(),
       message: z.string(),
+      document: uploadedDocumentSchema,
     }))
     .mutation(async ({ input }) => {
       try {
@@ -41,6 +42,7 @@ export const appRouter = router({
         return {
           documentId: document.id,
           message: `Document uploaded successfully. Processed ${document.pages.length} pages.`,
+          document,
         }
       } catch (error) {
         console.error('PDF processing error:', error)
@@ -60,6 +62,9 @@ export const appRouter = router({
         pageNbr: z.number(),
         content: z.string(),
         relevance: z.number(),
+        summary: z.string(),
+        tags: z.array(z.string()),
+        references: z.array(z.string()),
       })),
     }))
     .mutation(async ({ input }) => {
