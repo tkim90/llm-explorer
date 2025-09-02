@@ -1,8 +1,13 @@
+const withMDX = require('@next/mdx')({
+  extension: /\.mdx?$/,
+});
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const baseConfig = {
   experimental: {
     serverComponentsExternalPackages: ['zerox', 'libheif-js'],
   },
+  pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -21,4 +26,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withMDX(baseConfig);

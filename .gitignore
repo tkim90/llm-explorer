@@ -37,3 +37,7 @@ temp/
 
 # Observability dumps
 temp-dumps/
+
+# eng.traineddata is a file used by the Tesseract OCR software (zerox dependency)
+# that contains pre-trained information for recognizing English text in images. 
+eng.traineddata

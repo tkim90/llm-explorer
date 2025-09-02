@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { trpc } from '@/lib/trpc-provider'
+import Markdown from '@/components/markdown'
 
 interface QueryResult {
   answer: string
@@ -109,9 +110,9 @@ export function QueryInterface() {
         <div className="space-y-6">
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Answer</h3>
-            <div className="prose text-gray-800 leading-relaxed">
+            <Markdown className="prose text-gray-800 leading-relaxed max-w-none">
               {result.answer}
-            </div>
+            </Markdown>
           </div>
 
           {result.relevantPages.length > 0 && (
@@ -148,9 +149,9 @@ export function QueryInterface() {
                       Relevance: {(source.relevance * 100).toFixed(0)}%
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <Markdown className="prose text-gray-700 leading-relaxed max-w-none">
                     {source.content}
-                  </p>
+                  </Markdown>
                 </div>
               ))}
             </div>
