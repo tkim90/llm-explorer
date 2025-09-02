@@ -38,6 +38,7 @@ In this way we should look at page 1, notice that I have to go to page 35 that r
 
 # Workspace
 
+- Use `bun` for console commands and package management (bun install, bun run, bun remove, bun test)
 - All code must be written in Typescript.
 - Runtime: use bunjs
 - Frontend: use NextJS 
