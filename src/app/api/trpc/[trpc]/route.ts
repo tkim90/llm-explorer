@@ -1,8 +1,8 @@
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
-import { appRouter } from '@/server/router'
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-// export const runtime = 'nodejs'
-// export const dynamic = 'force-dynamic'
+import { appRouter } from '@/server/router'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 
 const handler = (req: Request) =>
   fetchRequestHandler({
