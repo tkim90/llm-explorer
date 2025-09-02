@@ -40,13 +40,63 @@ export async function processPDFBuffer(
     // Extract text from pdf2json format
     const pages = pdfData.Pages || []
     observer.log('Extracting text from pages')
-    
+
+    // Reconstruct text using positional grouping to avoid extra spaces
     const pageTexts = pages.map((page: any) => {
-      const texts = page.Texts || []
-      const pageText = texts.map((textObj: any) => {
-        return textObj.R.map((r: any) => decodeURIComponent(r.T)).join('')
-      }).join(' ')
-      return pageText
+      const texts: any[] = page.Texts || []
+      if (!texts.length) return ''
+
+      // Group by line based on Y position (rounded to reduce tiny variations)
+      const linesMap = new Map<number, any[]>()
+      for (const t of texts) {
+        const yKey = Math.round(t.y)
+        const arr = linesMap.get(yKey) || []
+        arr.push(t)
+        linesMap.set(yKey, arr)
+      }
+
+      // Sort lines by their Y coordinate
+      const sortedLines = Array.from(linesMap.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([, arr]) => arr)
+
+      // Build text line by line
+      const lineStrings = sortedLines.map((lineTokens: any[]) => {
+        // Sort tokens left-to-right
+        lineTokens.sort((a, b) => (a.x - b.x))
+
+        let line = ''
+        let prevEndX: number | null = null
+        for (const tok of lineTokens) {
+          const tokenText = (tok.R || [])
+            .map((r: any) => decodeURIComponent(r.T))
+            .join('')
+
+          const x = typeof tok.x === 'number' ? tok.x : 0
+          // pdf2json provides width as `w` in many cases; fall back to 0 if missing
+          const w = typeof tok.w === 'number' ? tok.w : 0
+
+          if (line.length > 0) {
+            // Compute gap between tokens to decide if a space is needed
+            const gap = prevEndX !== null ? (x - prevEndX) : 0
+            const startsWithSpace = tokenText.startsWith(' ')
+            const endsWithSpace = line.endsWith(' ')
+            // Heuristic: add a space if there's a noticeable gap or explicit space
+            const needsSpace = startsWithSpace || (!endsWithSpace && gap > 0.5)
+            if (needsSpace && !endsWithSpace) {
+              line += ' '
+            }
+          }
+
+          line += tokenText
+          prevEndX = x + w
+        }
+
+        return line.trimEnd()
+      })
+
+      // Join lines with newlines to preserve structure
+      return lineStrings.join('\n')
     })
     
     observer.log('Text extraction completed', { 
