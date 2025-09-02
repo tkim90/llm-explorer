@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { router, publicProcedure } from '@/lib/trpc'
 import { processPDFBuffer, getDocument, getAllDocuments } from '@/lib/pdf-processor'
 import { ForagerQueryAgent } from '@/lib/query-agent'
+import { dumpObject } from '@/lib/observability'
 
 const documentPageSchema = z.object({
   pageNbr: z.number(),
@@ -30,20 +31,73 @@ export const appRouter = router({
       message: z.string(),
     }))
     .mutation(async ({ input }) => {
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+      const startTime = Date.now()
+      
+      console.log(`[${requestId}] 🚀 Upload request started`, {
+        filename: input.filename,
+        fileSize: input.fileData.length,
+        requestId
+      })
+      
       try {
-        console.log('Starting PDF processing for:', input.filename)
+        console.log(`[${requestId}] 📄 Starting PDF processing for: ${input.filename}`)
         const buffer = Buffer.from(input.fileData, 'base64')
-        console.log('Buffer created, size:', buffer.length)
+        console.log(`[${requestId}] 💾 Buffer created, size: ${buffer.length} bytes`)
+        
+        // Dump request details for debugging
+        await dumpObject(`request-${requestId}.json`, {
+          requestId,
+          filename: input.filename,
+          originalFileSize: input.fileData.length,
+          bufferSize: buffer.length,
+          startTime: new Date(startTime).toISOString()
+        })
         
         const document = await processPDFBuffer(buffer, input.filename)
-        console.log('PDF processed successfully, pages:', document.pages.length)
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        
+        console.log(`[${requestId}] ✅ PDF processed successfully`, {
+          pages: document.pages.length,
+          documentId: document.id,
+          duration: `${duration}ms`,
+          avgTimePerPage: `${Math.round(duration / document.pages.length)}ms`
+        })
+        
+        // Dump processing result summary
+        await dumpObject(`result-${requestId}.json`, {
+          requestId,
+          documentId: document.id,
+          filename: document.filename,
+          processingDuration: duration,
+          pagesProcessed: document.pages.length,
+          totalContentLength: document.pages.reduce((acc, page) => acc + page.content.length, 0),
+          endTime: new Date(endTime).toISOString(),
+          success: true
+        })
         
         return {
           documentId: document.id,
-          message: `Document uploaded successfully. Processed ${document.pages.length} pages.`,
+          message: `Document uploaded successfully. Processed ${document.pages.length} pages in ${duration}ms.`,
         }
       } catch (error) {
-        console.error('PDF processing error:', error)
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        
+        console.error(`[${requestId}] ❌ PDF processing error after ${duration}ms:`, error)
+        
+        // Dump error details
+        await dumpObject(`error-${requestId}.json`, {
+          requestId,
+          filename: input.filename,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          duration,
+          endTime: new Date(endTime).toISOString(),
+          success: false
+        })
+        
         throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : String(error)}`)
       }
     }),

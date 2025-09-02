@@ -74,7 +74,7 @@ export class ForagerQueryAgent {
         const content = page.content.toLowerCase()
         const summary = page.summary.toLowerCase()
         const tags = page.tags.map(t => t.toLowerCase())
-        
+
         let relevance = 0
         keywords.forEach(keyword => {
           const keywordLower = keyword.toLowerCase()
@@ -82,7 +82,7 @@ export class ForagerQueryAgent {
           if (summary.includes(keywordLower)) relevance += 2
           if (tags.some(tag => tag.includes(keywordLower))) relevance += 1
         })
-        
+
         return { pageNbr: page.pageNbr, relevance, summary: page.summary }
       })
       .filter(result => result.relevance > 0)
@@ -92,8 +92,8 @@ export class ForagerQueryAgent {
 
   private searchReferences(reference: string): Array<{ pageNbr: number, references: string[] }> {
     return this.documents
-      .filter(page => 
-        page.references.some(ref => 
+      .filter(page =>
+        page.references.some(ref =>
           ref.toLowerCase().includes(reference.toLowerCase())
         )
       )
@@ -107,8 +107,8 @@ export class ForagerQueryAgent {
     return this.documents
       .filter(page => page.pageNbr !== pageNumber)
       .map(page => {
-        const commonTags = page.tags.filter(tag => 
-          targetPage.tags.some(targetTag => 
+        const commonTags = page.tags.filter(tag =>
+          targetPage.tags.some(targetTag =>
             targetTag.toLowerCase() === tag.toLowerCase()
           )
         )
@@ -125,11 +125,11 @@ export class ForagerQueryAgent {
 
     // First, identify potentially relevant pages using AI
     const relevantPageNumbers = await identifyRelevantPages(
-      this.documents.map(p => ({ 
-        pageNbr: p.pageNbr, 
+      this.documents.map(p => ({
+        pageNbr: p.pageNbr,
         content: p.content.substring(0, 500), // Truncate for efficiency
-        summary: p.summary, 
-        tags: p.tags 
+        summary: p.summary,
+        tags: p.tags
       })),
       query
     )
@@ -150,17 +150,17 @@ export class ForagerQueryAgent {
     const keywords = query.toLowerCase().split(' ').filter(word => word.length > 3)
     for (const page of this.documents) {
       if (relevantPageNumbers.includes(page.pageNbr)) continue
-      
+
       const contentLower = page.content.toLowerCase()
       const summaryLower = page.summary.toLowerCase()
-      
+
       let relevanceScore = 0
       for (const keyword of keywords) {
         if (contentLower.includes(keyword)) relevanceScore += 1
         if (summaryLower.includes(keyword)) relevanceScore += 2
         if (page.tags.some(tag => tag.toLowerCase().includes(keyword))) relevanceScore += 1
       }
-      
+
       if (relevanceScore > 2 && sources.length < 10) {
         sources.push({
           pageNbr: page.pageNbr,
@@ -174,7 +174,7 @@ export class ForagerQueryAgent {
     sources.sort((a, b) => b.relevance - a.relevance)
 
     // Generate answer using all collected context
-    const contextText = sources.map(s => 
+    const contextText = sources.map(s =>
       `Page ${s.pageNbr}: ${s.content}`
     ).join('\n\n')
 
@@ -207,7 +207,7 @@ Please provide a comprehensive answer based on the available information.`
         }
       ],
       temperature: 0.1,
-      max_tokens: 1000
+      max_tokens: 5000
     })
 
     const answer = response.choices[0]?.message.content || 'No answer could be generated from the available content.'

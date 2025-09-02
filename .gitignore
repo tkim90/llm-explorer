@@ -34,3 +34,6 @@ dist/
 build/
 tmp/
 temp/
+
+# Observability dumps
+temp-dumps/
