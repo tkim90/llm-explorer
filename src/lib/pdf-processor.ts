@@ -131,6 +131,10 @@ export async function processPDFBuffer(
     observer.log('Storing document in memory')
     await storeDocument(document)
 
+    console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+    console.log("✨ documentStore", documentStore)
+    console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+
     observer.log('Cleaning up temp files')
     await fs.rm(tempRoot, { recursive: true, force: true }).catch(() => {})
 
@@ -166,5 +170,8 @@ export async function getDocument(id: string): Promise<UploadedDocument | null> 
 }
 
 export async function getAllDocuments(): Promise<UploadedDocument[]> {
+  console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨") 
+  console.log("✨ documentStore", documentStore)
+  console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
   return Array.from(documentStore.values())
 }
