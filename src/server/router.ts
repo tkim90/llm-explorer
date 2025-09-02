@@ -129,6 +129,11 @@ export const appRouter = router({
         } else {
           // Query across all documents
           const allDocs = await getAllDocuments()
+
+          console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+          console.log("✨ allDocs", allDocs)
+          console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+
           documents = allDocs.flatMap(doc => doc.pages)
         }
         
@@ -138,6 +143,10 @@ export const appRouter = router({
         
         const agent = new ForagerQueryAgent(documents)
         const result = await agent.processQuery(input.query)
+
+        console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+        console.log("✨ result", result)
+        console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
         
         return {
           answer: result.answer,

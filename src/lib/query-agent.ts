@@ -140,7 +140,7 @@ export class ForagerQueryAgent {
       if (page) {
         sources.push({
           pageNbr,
-          content: page.content.substring(0, 1000),
+          content: page.content,
           relevance: 1.0
         })
       }

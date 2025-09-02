@@ -39,6 +39,11 @@ export function QueryInterface() {
     })
   }
 
+  console.log({
+    documents,
+    result,
+  })
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,7 +1,6 @@
 import { generateDocumentSummary } from '@/lib/openai'
 import { DocumentPage, UploadedDocument } from '@/types/document'
 import { createDocumentObserver } from '@/lib/observability'
-import { zerox } from 'zerox'
 import { promises as fs } from 'fs'
 import os from 'os'
 import path from 'path'
@@ -39,7 +38,20 @@ export async function processPDFBuffer(
       throw new Error('OPENAI_API_KEY environment variable is required')
     }
 
-    const ocrResult = await zerox({
+    /**
+     * Lazy import zerox bc it breaks edge bundles (for trpc api routes)
+     * Because it relies on `libheif-js`, which triggers this error:
+     * 
+     * ⚠ ./node_modules/libheif-js/libheif-wasm/libheif-bundle.js
+     * Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+     */
+    const zerox = await import('zerox');
+    console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+    console.log("✨ Successfully imported zerox", zerox.zerox.name);
+    console.log("✨ Running Zerox OCR...");
+    console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+
+    const ocrResult = await zerox.zerox({
       filePath: tempFilePath,
       modelProvider: 'OPENAI',
       model: 'gpt-4o-mini',
@@ -51,12 +63,21 @@ export async function processPDFBuffer(
       // Keep defaults for concurrency, retries, etc.
     })
 
+
+    console.log('✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨')
+    console.log("✨ tempFilePath", tempFilePath)
+    console.log("✨ tempRoot", tempRoot)
+    console.log('✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨')
+    console.log("✨ ocrResult", ocrResult)
+    console.log('✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨')
+
     observer.log('Zerox OCR completed', {
       totalPages: ocrResult.pages?.length || 0,
       inputTokens: ocrResult.inputTokens,
       outputTokens: ocrResult.outputTokens,
     })
 
+    observer.log('mock - Zerox OCR completed');
     const documentPages: DocumentPage[] = []
 
     observer.log('Starting AI-powered page analysis from OCR markdown')
@@ -118,7 +139,6 @@ export async function processPDFBuffer(
     await observer.dumpToFiles(document)
 
     return document
-  
   } catch (error) {
     observer.log('Error during PDF processing', { 
       error: error instanceof Error ? error.message : String(error),
