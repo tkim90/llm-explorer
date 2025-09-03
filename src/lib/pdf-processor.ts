@@ -161,17 +161,83 @@ function generateDocumentId(): string {
 // Simple in-memory storage (replace with database in production)
 const documentStore = new Map<string, UploadedDocument>()
 
+let initialized = false
+let initError: Error | null = null
+let initPromise: Promise<void> | null = null
+
+async function initializeFromDisk(): Promise<void> {
+  const dumpsDir = path.join(process.cwd(), 'temp-dumps')
+  try {
+    const stat = await fs.stat(dumpsDir).catch(() => null)
+    if (!stat || !stat.isDirectory()) {
+      initialized = true
+      return
+    }
+
+    const entries = await fs.readdir(dumpsDir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const docId = entry.name
+      const uploadedDocPath = path.join(dumpsDir, docId, 'uploaded-document.json')
+      try {
+        const fileStat = await fs.stat(uploadedDocPath).catch(() => null)
+        if (!fileStat || !fileStat.isFile()) continue
+        const raw = await fs.readFile(uploadedDocPath, 'utf-8')
+        const parsed = JSON.parse(raw)
+        const doc: UploadedDocument = {
+          id: parsed.id,
+          filename: parsed.filename,
+          pages: parsed.pages ?? [],
+          uploadedAt: new Date(parsed.uploadedAt),
+        }
+        if (doc && doc.id && !documentStore.has(doc.id)) {
+          documentStore.set(doc.id, doc)
+        }
+      } catch (e) {
+        console.warn(`Failed to load dump for ${docId}:`, e)
+      }
+    }
+    initialized = true
+  } catch (e) {
+    initError = e as Error
+    initialized = true // prevent repeated attempts on every call
+    console.warn('Document initialization from disk failed:', e)
+  }
+}
+
+async function ensureInitialized(): Promise<void> {
+  if (initialized) return
+  if (!initPromise) {
+    initPromise = initializeFromDisk().finally(() => {
+      initPromise = null
+    })
+  }
+  await initPromise
+}
+
 async function storeDocument(document: UploadedDocument): Promise<void> {
+  await ensureInitialized()
   documentStore.set(document.id, document)
 }
 
 export async function getDocument(id: string): Promise<UploadedDocument | null> {
+  await ensureInitialized()
   return documentStore.get(id) || null
 }
 
 export async function getAllDocuments(): Promise<UploadedDocument[]> {
-  console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨") 
-  console.log("✨ documentStore", documentStore)
-  console.log("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨")
+  await ensureInitialized()
   return Array.from(documentStore.values())
+}
+
+export async function deleteDocumentById(id: string): Promise<boolean> {
+  await ensureInitialized()
+  const existed = documentStore.delete(id)
+  try {
+    const dumpDir = path.join(process.cwd(), 'temp-dumps', id)
+    await fs.rm(dumpDir, { recursive: true, force: true })
+  } catch (e) {
+    console.warn('Failed to remove dump dir for', id, e)
+  }
+  return existed
 }

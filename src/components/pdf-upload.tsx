@@ -62,8 +62,12 @@ export function PDFUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragActive, setDragActive] = useState(false)
 
+  const utils = trpc.useUtils()
   const uploadMutation = trpc.uploadDocument.useMutation({
-    onSuccess: () => setSelectedFile(null),
+    onSuccess: async () => {
+      setSelectedFile(null)
+      await utils.getDocuments.invalidate()
+    },
     onError: (error) => console.error('Upload failed:', error),
   })
 

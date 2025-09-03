@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { router, publicProcedure } from '@/lib/trpc'
-import { processPDFBuffer, getDocument, getAllDocuments } from '@/lib/pdf-processor'
+import { processPDFBuffer, getDocument, getAllDocuments, deleteDocumentById } from '@/lib/pdf-processor'
 import { ForagerQueryAgent } from '@/lib/query-agent'
 import { dumpObject } from '@/lib/observability'
 
@@ -173,6 +173,27 @@ export const appRouter = router({
         uploadedAt: doc.uploadedAt,
         pageCount: doc.pages.length,
       }))
+    }),
+
+  getDocumentDetail: publicProcedure
+    .input(z.object({ documentId: z.string() }))
+    .output(uploadedDocumentSchema)
+    .query(async ({ input }) => {
+      const doc = await getDocument(input.documentId)
+      if (!doc) {
+        throw new Error('Document not found')
+      }
+      return doc
+    }),
+
+  deleteDocument: publicProcedure
+    .input(z.object({
+      documentId: z.string(),
+    }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const success = await deleteDocumentById(input.documentId)
+      return { success }
     }),
 })
 
